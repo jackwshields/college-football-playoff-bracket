@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>College Football Playoff Bracket Maker</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        h1 {
+            color: #0d4275;
+            margin-bottom: 10px;
+        }
+        
+        .description {
+            color: #555;
+            font-size: 18px;
+            margin-bottom: 30px;
+        }
+        
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .team-input {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .options {
+            flex: 1;
+            min-width: 300px;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .team-list {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .team-entry {
+            display: flex;
+            align-items: center;
+        }
+        
+        .team-entry input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        
+        .team-entry .seed {
+            width: 30px;
+            text-align: center;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        
+        button {
+            background-color: #0d4275;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #0a3259;
+        }
+        
+        .bracket-container {
+            overflow-x: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .bracket {
+            display: flex;
+            justify-content: space-between;
+            min-width: 900px;
+        }
+        
+        .round {
+            display: flex;
+            flex-direction: column;
+            justify-content: space-around;
+            width: 200px;
+        }
+        
+        .round-title {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #0d4275;
+        }
+        
+        .matchup {
+            display: flex;
+            flex-direction: column;
+            height: 100px;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .team {
+            border: 1px solid #ddd;
+            padding: 10px;
+            background-color: #f9f9f9;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            transition: background-color 0.3s;
+        }
+        
+        .team:hover {
+            background-color: #e9f0f7;
+        }
+        
+        .team.selected {
+            background-color: #d0e3f7;
+            font-weight: bold;
+        }
+        
+        .team.winner {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        
+        .team-seed {
+            background-color: #0d4275;
+            color: white;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 12px;
+            margin-right: 8px;
+        }
+        
+        .team-name {
+            flex: 1;
+        }
+        
+        .connector {
+            position: absolute;
+            right: -25px;
+            width: 25px;
+            border-top: 1px solid #aaa;
+        }
+        
+        .connector.top {
+            top: 25%;
+        }
+        
+        .connector.bottom {
+            bottom: 25%;
+        }
+        
+        .vertical-connector {
+            position: absolute;
+            right: -25px;
+            height: 50%;
+            border-right: 1px solid #aaa;
+        }
+        
+        .national-champion {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 24px;
+            font-weight: bold;
+            color: #0d4275;
+        }
+        
+        .export-section {
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .export-section button {
+            margin: 0 10px;
+        }
+        
+        @media (max-width: 768px) {
+            .team-list {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>College Football Playoff Bracket Maker</h1>
+        <div class="description">Create and fill out your own College Football Playoff bracket</div>
+    </header>
+    
+    <div class="controls">
+        <div class="team-input">
+            <h2>Enter Teams</h2>
+            <p>Add the 12 playoff teams and their seeds</p>
+            <div class="team-list" id="teamList">
+                <!-- Team inputs will be generated here -->
+            </div>
+            <div>
+                <button id="loadDefaultTeams">Load 2024 CFP Teams</button>
+                <button id="randomizeSeeds">Randomize Seeds</button>
+            </div>
+        </div>
+        
+        <div class="options">
+            <h2>Bracket Options</h2>
+            <p>Customize your bracket display</p>
+            <div>
+                <label>
+                    <input type="checkbox" id="showSeedsCheckbox" checked> 
+                    Show Seeds
+                </label>
+            </div>
+            <div>
+                <label>
+                    <input type="checkbox" id="autofillFirstRound"> 
+                    Auto-fill First Round (Higher Seeds Win)
+                </label>
+            </div>
+            <div>
+                <button id="generateBracket">Generate Bracket</button>
+                <button id="resetBracket">Reset Bracket</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bracket-container">
+        <div class="bracket" id="bracketContainer">
+            <!-- Bracket will be generated here -->
+        </div>
+        <div class="national-champion" id="championDisplay"></div>
+    </div>
+    
+    <div class="export-section">
+        <button id="saveButton">Save Bracket</button>
+        <button id="shareButton">Share Bracket</button>
+    </div>
+    
+    <script>
+        // Initialize the application when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            // Default teams for 2024 CFP (example data)
+            const defaultTeams = [
+                { seed: 1, name: "Oregon" },
+                { seed: 2, name: "Ohio State" },
+                { seed: 3, name: "Texas" },
+                { seed: 4, name: "Alabama" },
+                { seed: 5, name: "Michigan" },
+                { seed: 6, name: "Georgia" },
+                { seed: 7, name: "Ole Miss" },
+                { seed: 8, name: "Miami" },
+                { seed: 9, name: "Missouri" },
+                { seed: 10, name: "Notre Dame" },
+                { seed: 11, name: "Penn State" },
+                { seed: 12, name: "Indiana" }
+            ];
+            
+            // Generate team input fields
+            const teamList = document.getElementById('teamList');
+            for (let i = 1; i <= 12; i++) {
+                const teamEntry = document.createElement('div');
+                teamEntry.className = 'team-entry';
+                
+                const seedSpan = document.createElement('span');
+                seedSpan.className = 'seed';
+                seedSpan.textContent = i;
+                
+                const teamInput = document.createElement('input');
+                teamInput.type = 'text';
+                teamInput.placeholder = 'Team name';
+                teamInput.id = `team-${i}`;
+                
+                teamEntry.appendChild(seedSpan);
+                teamEntry.appendChild(teamInput);
+                teamList.appendChild(teamEntry);
+            }
+            
+            // Load default teams button
+            document.getElementById('loadDefaultTeams').addEventListener('click', function() {
+                defaultTeams.forEach(team => {
+                    document.getElementById(`team-${team.seed}`).value = team.name;
+                });
+            });
+            
+            // Randomize seeds button
+            document.getElementById('randomizeSeeds').addEventListener('click', function() {
+                const currentTeams = [];
+                for (let i = 1; i <= 12; i++) {
+                    const teamName = document.getElementById(`team-${i}`).value;
+                    if (teamName) {
+                        currentTeams.push(teamName);
+                    }
+                }
+                
+                if (currentTeams.length === 0) {
+                    // If no teams are entered, use default teams
+                    defaultTeams.forEach(team => {
+                        currentTeams.push(team.name);
+                    });
+                }
+                
+                // Shuffle the team names
+                const shuffledTeams = [...currentTeams].sort(() => Math.random() - 0.5);
+                
+                // Fill in the inputs with shuffled teams
+                for (let i = 0; i < Math.min(shuffledTeams.length, 12); i++) {
+                    document.getElementById(`team-${i+1}`).value = shuffledTeams[i];
+                }
+            });
+            
+            // Generate bracket button
+            document.getElementById('generateBracket').addEventListener('click', generateBracket);
+            
+            // Reset bracket button
+            document.getElementById('resetBracket').addEventListener('click', function() {
+                document.getElementById('bracketContainer').innerHTML = '';
+                document.getElementById('championDisplay').textContent = '';
+            });
+            
+            // Save bracket button (placeholder functionality)
+            document.getElementById('saveButton').addEventListener('click', function() {
+                alert('This feature would save your bracket. In a real implementation, this would export to PDF or save to a database.');
+            });
+            
+            // Share bracket button (placeholder functionality)
+            document.getElementById('shareButton').addEventListener('click', function() {
+                alert('This feature would generate a shareable link. In a real implementation, this would create a unique URL to share your bracket.');
+            });
+            
+            function generateBracket() {
+                const bracketContainer = document.getElementById('bracketContainer');
+                bracketContainer.innerHTML = '';
+                document.getElementById('championDisplay').textContent = '';
+                
+                // Collect teams from inputs
+                const teams = [];
+                for (let i = 1; i <= 12; i++) {
+                    const teamName = document.getElementById(`team-${i}`).value || `Team ${i}`;
+                    teams.push({ seed: i, name: teamName });
+                }
+                
+                const showSeeds = document.getElementById('showSeedsCheckbox').checked;
+                const autofillFirstRound = document.getElementById('autofillFirstRound').checked;
+                
+                // Create the bracket structure for 12-team playoff
+                // First Round: Seeds 5-12 play (4 games)
+                // Quarterfinals: Seeds 1-4 play against First Round winners (4 games)
+                // Semifinals: Quarterfinal winners play (2 games)
+                // Championship: Semifinal winners play (1 game)
+                
+                // Create rounds
+                const roundNames = ["First Round", "Quarterfinals", "Semifinals", "Championship"];
+                
+                roundNames.forEach((roundName, roundIndex) => {
+                    const round = document.createElement('div');
+                    round.className = 'round';
+                    
+                    const roundTitle = document.createElement('div');
+                    roundTitle.className = 'round-title';
+                    roundTitle.textContent = roundName;
+                    round.appendChild(roundTitle);
+                    
+                    let matchupCount;
+                    switch (roundIndex) {
+                        case 0: // First Round
+                            matchupCount = 4;
+                            createFirstRound(round, teams, showSeeds, autofillFirstRound);
+                            break;
+                        case 1: // Quarterfinals
+                            matchupCount = 4;
+                            createQuarterfinals(round, teams, showSeeds);
+                            break;
+                        case 2: // Semifinals
+                            matchupCount = 2;
+                            createSemifinals(round, showSeeds);
+                            break;
+                        case 3: // Championship
+                            matchupCount = 1;
+                            createChampionship(round, showSeeds);
+                            break;
+                    }
+                    
+                    bracketContainer.appendChild(round);
+                });
+            }
+            
+            function createFirstRound(roundElement, teams, showSeeds, autofill) {
+                // First Round matchups: 5 vs 12, 6 vs 11, 7 vs 10, 8 vs 9
+                const matchups = [
+                    { team1: teams[4], team2: teams[11] }, // 5 vs 12
+                    { team1: teams[5], team2: teams[10] }, // 6 vs 11
+                    { team1: teams[6], team2: teams[9] },  // 7 vs 10
+                    { team1: teams[7], team2: teams[8] }   // 8 vs 9
+                ];
+                
+                matchups.forEach((matchup, index) => {
+                    const matchupElement = document.createElement('div');
+                    matchupElement.className = 'matchup';
+                    matchupElement.dataset.matchupId = `first-${index}`;
+                    
+                    // Team 1
+                    const team1Element = createTeamElement(matchup.team1, showSeeds);
+                    team1Element.dataset.teamSeed = matchup.team1.seed;
+                    team1Element.dataset.teamName = matchup.team1.name;
+                    
+                    // Team 2
+                    const team2Element = createTeamElement(matchup.team2, showSeeds);
+                    team2Element.dataset.teamSeed = matchup.team2.seed;
+                    team2Element.dataset.teamName = matchup.team2.name;
+                    
+                    // Add connector lines
+                    const connector1 = document.createElement('div');
+                    connector1.className = 'connector top';
+                    const connector2 = document.createElement('div');
+                    connector2.className = 'connector bottom';
+                    const verticalConnector = document.createElement('div');
+                    verticalConnector.className = 'vertical-connector';
+                    
+                    // Add click handlers for team selection
+                    team1Element.addEventListener('click', function() {
+                        selectWinner(this, team2Element, `first-${index}`);
+                    });
+                    
+                    team2Element.addEventListener('click', function() {
+                        selectWinner(this, team1Element, `first-${index}`);
+                    });
+                    
+                    // Autofill if enabled (higher seed wins)
+                    if (autofill) {
+                        if (matchup.team1.seed < matchup.team2.seed) {
+                            setTimeout(() => team1Element.click(), 100);
+                        } else {
+                            setTimeout(() => team2Element.click(), 100);
+                        }
+                    }
+                    
+                    matchupElement.appendChild(team1Element);
+                    matchupElement.appendChild(team2Element);
+                    matchupElement.appendChild(connector1);
+                    matchupElement.appendChild(connector2);
+                    matchupElement.appendChild(verticalConnector);
+                    
+                    roundElement.appendChild(matchupElement);
+                });
+            }
+            
+            function createQuarterfinals(roundElement, teams, showSeeds) {
+                // Quarterfinal matchups: 1 vs winner of 8/9, 2 vs winner of 7/10, 3 vs winner of 6/11, 4 vs winner of 5/12
+                const topSeeds = [
+                    { seed: teams[0].seed, name: teams[0].name },
+                    { seed: teams[1].seed, name: teams[1].name },
+                    { seed: teams[2].seed, name: teams[2].name },
+                    { seed: teams[3].seed, name: teams[3].name }
+                ];
+                
+                const matchupIds = ['quarter-0', 'quarter-1', 'quarter-2', 'quarter-3'];
+                
+                for (let i = 0; i < 4; i++) {
+                    const matchupElement = document.createElement('div');
+                    matchupElement.className = 'matchup';
+                    matchupElement.dataset.matchupId = matchupIds[i];
+                    
+                    // Top seed
+                    const team1Element = createTeamElement(topSeeds[i], showSeeds);
+                    team1Element.dataset.teamSeed = topSeeds[i].seed;
+                    team1Element.dataset.teamName = topSeeds[i].name;
+                    
+                    // Placeholder for winner from first round
+                    const team2Element = document.createElement('div');
+                    team2Element.className = 'team';
+                    team2Element.textContent = 'TBD';
+                    team2Element.dataset.teamSeed = '';
+                    team2Element.dataset.teamName = 'TBD';
+                    
+                    // Add connector lines
+                    const connector1 = document.createElement('div');
+                    connector1.className = 'connector top';
+                    const connector2 = document.createElement('div');
+                    connector2.className = 'connector bottom';
+                    const verticalConnector = document.createElement('div');
+                    verticalConnector.className = 'vertical-connector';
+                    
+                    // Add click handlers for team selection
+                    team1Element.addEventListener('click', function() {
+                        if (team2Element.dataset.teamName !== 'TBD') {
+                            selectWinner(this, team2Element, matchupIds[i]);
+                        }
+                    });
+                    
+                    team2Element.addEventListener('click', function() {
+                        if (this.dataset.teamName !== 'TBD') {
+                            selectWinner(this, team1Element, matchupIds[i]);
+                        }
+                    });
+                    
+                    matchupElement.appendChild(team1Element);
+                    matchupElement.appendChild(team2Element);
+                    matchupElement.appendChild(connector1);
+                    matchupElement.appendChild(connector2);
+                    matchupElement.appendChild(verticalConnector);
+                    
+                    roundElement.appendChild(matchupElement);
+                }
+            }
+            
+            function createSemifinals(roundElement, showSeeds) {
+                const matchupIds = ['semi-0', 'semi-1'];
+                
+                for (let i = 0; i < 2; i++) {
+                    const matchupElement = document.createElement('div');
+                    matchupElement.className = 'matchup';
+                    matchupElement.dataset.matchupId = matchupIds[i];
+                    
+                    // Placeholders for winners from quarterfinals
+                    const team1Element = document.createElement('div');
+                    team1Element.className = 'team';
+                    team1Element.textContent = 'TBD';
+                    team1Element.dataset.teamSeed = '';
+                    team1Element.dataset.teamName = 'TBD';
+                    
+                    const team2Element = document.createElement('div');
+                    team2Element.className = 'team';
+                    team2Element.textContent = 'TBD';
+                    team2Element.dataset.teamSeed = '';
+                    team2Element.dataset.teamName = 'TBD';
+                    
+                    // Add connector lines
+                    const connector1 = document.createElement('div');
+                    connector1.className = 'connector top';
+                    const connector2 = document.createElement('div');
+                    connector2.className = 'connector bottom';
+                    const verticalConnector = document.createElement('div');
+                    verticalConnector.className = 'vertical-connector';
+                    
+                    // Add click handlers for team selection
+                    team1Element.addEventListener('click', function() {
+                        if (this.dataset.teamName !== 'TBD') {
+                            selectWinner(this, team2Element, matchupIds[i]);
+                        }
+                    });
+                    
+                    team2Element.addEventListener('click', function() {
+                        if (this.dataset.teamName !== 'TBD') {
+                            selectWinner(this, team1Element, matchupIds[i]);
+                        }
+                    });
+                    
+                    matchupElement.appendChild(team1Element);
+                    matchupElement.appendChild(team2Element);
+                    matchupElement.appendChild(connector1);
+                    matchupElement.appendChild(connector2);
+                    matchupElement.appendChild(verticalConnector);
+                    
+                    roundElement.appendChild(matchupElement);
+                }
+            }
+            
+            function createChampionship(roundElement, showSeeds) {
+                const matchupElement = document.createElement('div');
+                matchupElement.className = 'matchup';
+                matchupElement.dataset.matchupId = 'championship';
+                
+                // Placeholders for winners from semifinals
+                const team1Element = document.createElement('div');
+                team1Element.className = 'team';
+                team1Element.textContent = 'TBD';
+                team1Element.dataset.teamSeed = '';
+                team1Element.dataset.teamName = 'TBD';
+                
+                const team2Element = document.createElement('div');
+                team2Element.className = 'team';
+                team2Element.textContent = 'TBD';
+                team2Element.dataset.teamSeed = '';
+                team2Element.dataset.teamName = 'TBD';
+                
+                // Add click handlers for team selection
+                team1Element.addEventListener('click', function() {
+                    if (this.dataset.teamName !== 'TBD') {
+                        selectChampion(this, team2Element);
+                    }
+                });
+                
+                team2Element.addEventListener('click', function() {
+                    if (this.dataset.teamName !== 'TBD') {
+                        selectChampion(this, team1Element);
+                    }
+                });
+                
+                matchupElement.appendChild(team1Element);
+                matchupElement.appendChild(team2Element);
+                
+                roundElement.appendChild(matchupElement);
+            }
+            
+            function createTeamElement(team, showSeeds) {
+                const teamElement = document.createElement('div');
+                teamElement.className = 'team';
+                
+                if (showSeeds) {
+                    const seedElement = document.createElement('span');
+                    seedElement.className = 'team-seed';
+                    seedElement.textContent = team.seed;
+                    
+                    const nameElement = document.createElement('span');
+                    nameElement.className = 'team-name';
+                    nameElement.textContent = team.name;
+                    
+                    teamElement.appendChild(seedElement);
+                    teamElement.appendChild(nameElement);
+                } else {
+                    teamElement.textContent = team.name;
+                }
+                
+                return teamElement;
+            }
+            
+            function selectWinner(winnerElement, loserElement, matchupId) {
+                // Mark winner and loser
+                winnerElement.classList.add('selected');
+                loserElement.classList.remove('selected');
+                
+                // Get info about the winner
+                const winnerSeed = winnerElement.dataset.teamSeed;
+                const winnerName = winnerElement.dataset.teamName;
+                
+                // Determine the next round and matchup
+                let nextRound, nextMatchupId, nextTeamElement;
+                
+                if (matchupId.startsWith('first')) {
+                    // First round winners go to quarterfinals
+                    const matchupIndex = parseInt(matchupId.split('-')[1]);
+                    nextMatchupId = `quarter-${3 - matchupIndex}`; // Map to correct quarterfinal matchup
+                    nextTeamElement = document.querySelector(`[data-matchup-id="${nextMatchupId}"] .team:nth-child(2)`);
+                } 
+                else if (matchupId.startsWith('quarter')) {
+                    // Quarterfinal winners go to semifinals
+                    const matchupIndex = parseInt(matchupId.split('-')[1]);
+                    nextMatchupId = `semi-${Math.floor(matchupIndex / 2)}`;
+                    const isFirstTeam = matchupIndex % 2 === 0;
+                    nextTeamElement = document.querySelector(`[data-matchup-id="${nextMatchupId}"] .team:nth-child(${isFirstTeam ? 1 : 2})`);
+                } 
+                else if (matchupId.startsWith('semi')) {
+                    // Semifinal winners go to championship
+                    const matchupIndex = parseInt(matchupId.split('-')[1]);
+                    nextMatchupId = 'championship';
+                    const isFirstTeam = matchupIndex === 0;
+                    nextTeamElement = document.querySelector(`[data-matchup-id="${nextMatchupId}"] .team:nth-child(${isFirstTeam ? 1 : 2})`);
+                }
+                
+                // Update the next round with the winner
+                if (nextTeamElement) {
+                    const showSeeds = document.getElementById('showSeedsCheckbox').checked;
+                    
+                    if (showSeeds) {
+                        nextTeamElement.innerHTML = '';
+                        
+                        const seedElement = document.createElement('span');
+                        seedElement.className = 'team-seed';
+                        seedElement.textContent = winnerSeed;
+                        
+                        const nameElement = document.createElement('span');
+                        nameElement.className = 'team-name';
+                        nameElement.textContent = winnerName;
+                        
+                        nextTeamElement.appendChild(seedElement);
+                        nextTeamElement.appendChild(nameElement);
+                    } else {
+                        nextTeamElement.textContent = winnerName;
+                    }
+                    
+                    nextTeamElement.dataset.teamSeed = winnerSeed;
+                    nextTeamElement.dataset.teamName = winnerName;
+                }
+            }
+            
+            function selectChampion(winnerElement, loserElement) {
+                // Mark winner and loser
+                winnerElement.classList.add('selected');
+                winnerElement.classList.add('winner');
+                loserElement.classList.remove('selected');
+                loserElement.classList.remove('winner');
+                
+                // Get info about the champion
+                const championSeed = winnerElement.dataset.teamSeed;
+                const championName = winnerElement.dataset.teamName;
+                
+                // Display the champion
+                const championDisplay = document.getElementById('championDisplay');
+                championDisplay.innerHTML = `National Champion: <span style="color: #28a745;">${championName}${championSeed ? ` (${championSeed})` : ''}</span>`;
+            }
+            
+            // Load default teams on initial page load
+            document.getElementById('loadDefaultTeams').click();
+            
+            // Generate initial bracket
+            generateBracket();
+        });
+    </script>
+</body>
+</html>
